@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:testapp/providers/all_plants.dart';
 import 'package:testapp/services/firestore.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import 'popup.dart';
 import 'widgets/navigate_drawer.dart';
@@ -18,6 +19,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final String title = "Home";
   var name = '';
+  var userId = '';
 
   List plantList = [];
 
@@ -26,7 +28,12 @@ class _HomeState extends State<Home> {
     super.initState();
     User user = FirebaseAuth.instance.currentUser;
     name = user.displayName ?? '';
+    userId = user.uid ?? '';
     fetchPlantList();
+  }
+
+  _ago(Timestamp t) {
+    return timeago.format(t.toDate(), locale: 'en_short');
   }
 
   fetchPlantList() async {
@@ -52,23 +59,29 @@ class _HomeState extends State<Home> {
           stream: FirebaseFirestore.instance.collection('Plants').snapshots(),
           builder:
               (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (snapshot.hasData == false || snapshot.data == null)
+            if (!snapshot.hasData)
               return Center(
                 child: Text('Welcome ' + name),
               );
             else
               return ListView(
                 children: snapshot.data.docs.map((document) {
-                  return Card(
-                    child: ListTile(
-                      title: Text(document['title']),
-                      subtitle: Text('ID: ' + document['plantId']),
-                      leading: CircleAvatar(
-                        backgroundImage: NetworkImage(document['imageUrl']),
+                  if (document['userId'] == userId)
+                    return Card(
+                      child: ListTile(
+                        title: Text(document['title']),
+                        subtitle: Text(
+                            'Planted ' + _ago(document['dateTime']) + ' ago'),
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(document['imageUrl']),
+                        ),
+                        trailing: Text(''),
                       ),
-                      trailing: Text(''),
-                    ),
-                  );
+                    );
+                  else {
+                    //return Center(child: Text('No Plants!'));
+                    return null;
+                  }
                 }).toList(),
               );
           },
