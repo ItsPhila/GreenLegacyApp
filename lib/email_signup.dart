@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:testapp/services/auth_service.dart';
 
 import 'home.dart';
 import 'animation/animation.dart';
@@ -343,6 +345,17 @@ class _EmailSignUpState extends State<EmailSignUp> {
       if (user != null) {
         // new method to update user profile
         user.updateProfile(displayName: nameController.text.trim());
+        await user.reload();
+        //if (user.displayName != null) {
+        Timestamp timeStamp = Timestamp.fromDate(DateTime.now());
+        addUserToFireStore(
+            user.uid, user.email, "User", timeStamp);
+        //} else {
+        //   await user.reload();
+        //   Timestamp timeStamp = Timestamp.fromDate(DateTime.now());
+        //   addUserToFireStore(
+        //       user.uid, user.email, user.displayName, "User", timeStamp);
+        //}
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Home(uid: user.uid)),
