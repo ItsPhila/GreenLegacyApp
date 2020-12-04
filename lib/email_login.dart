@@ -264,8 +264,9 @@ class _EmailLogInState extends State<EmailLogIn> {
             return AlertDialog(
               title: Text("Error"),
               //content: Text(err.message),
-              content: Text(
-                  'Invalid Email and Password combination! Please try again!'),
+              // content: Text(
+              //     'Invalid Email and Password combination! Please try again!'),
+              content: Text(err.message),
               actions: [
                 FlatButton(
                   child: Text("Ok"),

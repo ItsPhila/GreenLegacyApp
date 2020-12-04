@@ -5,13 +5,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'dart:io';
 
-import 'package:provider/provider.dart';
-import 'package:testapp/providers/all_plants.dart';
 import 'package:testapp/services/firestore.dart';
 
 class PopUp extends StatefulWidget {
@@ -24,12 +23,13 @@ class _PopUpState extends State<PopUp> {
   final _formKey = GlobalKey<FormState>();
   File _storedImage;
   final _titleController = TextEditingController();
-  String qrResult = 'id + ', qrResultErr;
+  String qrResult, qrResultErr;
   var id = '';
   DateTime _dateTime;
   String latitude;
   String longitude;
   String imageUrl;
+  var region = '';
 
   FlutterLocalNotificationsPlugin notification;
 
@@ -120,10 +120,23 @@ class _PopUpState extends State<PopUp> {
   void _getCurrentLocation() async {
     final geoposition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
+
     setState(() {
       latitude = '${geoposition.latitude}';
       longitude = '${geoposition.longitude}';
     });
+
+    try {
+      List<Placemark> p = await placemarkFromCoordinates(
+          geoposition.latitude, geoposition.longitude);
+      Placemark place = p[0];
+
+      setState(() {
+        region = "${place.administrativeArea}";
+      });
+    } catch (e) {
+      print('woiiioi ' + e);
+    }
   }
 
   void _savePlant() {
@@ -131,7 +144,7 @@ class _PopUpState extends State<PopUp> {
     Timestamp timeStamp = Timestamp.fromDate(currentPhoneDate);
 
     addPlantToFireStore(
-        id, qrResult, _titleController.text, imageUrl, timeStamp);
+        id, qrResult, _titleController.text, imageUrl, timeStamp, region);
     // Provider.of<AllPlants>(context, listen: false)
     //     .addPlant(qrResult, id ,_titleController.text, imageUrl);
     Navigator.of(context).pop();
@@ -146,7 +159,7 @@ class _PopUpState extends State<PopUp> {
         ),
       ),
       title: Text(
-        'Add Plant Info',
+        "Enter Plant Info...",
         textAlign: TextAlign.center,
         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 25.0),
       ),
