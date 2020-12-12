@@ -1,10 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoder/geocoder.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:testapp/services/auth_service.dart';
 
 import 'home.dart';
 import 'animation/animation.dart';
@@ -23,36 +18,12 @@ class _EmailSignUpState extends State<EmailSignUp> {
   TextEditingController nameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController retypePasswordController = TextEditingController();
-  String latitude = '';
-  String longitude = '';
-  var region = '';
+
   bool _passwordVisible = false;
 
   @override
   void initState() {
-    super.initState();
-    _getCurrentLocation();
-  }
-
-  void _getCurrentLocation() async {
-    final geoposition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-
-    setState(() {
-      latitude = '${geoposition.latitude}';
-      longitude = '${geoposition.longitude}';
-    });
-
-    final coordinates =
-        new Coordinates(geoposition.latitude, geoposition.longitude);
-    var addresses =
-        await Geocoder.local.findAddressesFromCoordinates(coordinates);
-    var place = addresses.first;
-    debugPrint('location: ${place.adminArea}');
-
-    setState(() {
-      region = "${place.adminArea}";
-    });
+    _passwordVisible = false;
   }
 
   @override
@@ -193,34 +164,7 @@ class _EmailSignUpState extends State<EmailSignUp> {
                               },
                             ),
                             SizedBox(
-                              height: 20,
-                            ),
-                            Text(
-                              'Choose Gender :',
-                            ),
-                            new Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Radio(
-                                  value: 0,
-                                  //groupValue: _radioValue1,
-                                  onChanged: (value) {},
-                                ),
-                                Text(
-                                  'Male',
-                                ),
-                                Radio(
-                                  value: 1,
-                                  //groupValue: _radioValue1,
-                                  //onChanged: _handleRadioValueChange1,
-                                ),
-                                Text(
-                                  'Female',
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                              height: 10,
+                              height: 30,
                             ),
                           ],
                         )),
@@ -364,7 +308,6 @@ class _EmailSignUpState extends State<EmailSignUp> {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                _getCurrentLocation();
                                 registerToFb();
                               }
                             },
@@ -389,7 +332,6 @@ class _EmailSignUpState extends State<EmailSignUp> {
   }
 
   void registerToFb() async {
-    _getCurrentLocation();
     try {
       UserCredential userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -401,17 +343,6 @@ class _EmailSignUpState extends State<EmailSignUp> {
       if (user != null) {
         // new method to update user profile
         user.updateProfile(displayName: nameController.text.trim());
-        await user.reload();
-        //if (user.displayName != null) {
-        Timestamp timeStamp = Timestamp.fromDate(DateTime.now());
-        addUserToFireStore(user.uid, user.email, nameController.text.trim(),
-            "User", timeStamp, region);
-        //} else {
-        //   await user.reload();
-        //   Timestamp timeStamp = Timestamp.fromDate(DateTime.now());
-        //   addUserToFireStore(
-        //       user.uid, user.email, user.displayName, "User", timeStamp);
-        //}
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Home(uid: user.uid)),
@@ -447,6 +378,4 @@ class _EmailSignUpState extends State<EmailSignUp> {
     passwordController.dispose();
     retypePasswordController.dispose();
   }
-
-  placemarkFromCoordinates(double latitude, double longitude) {}
 }
