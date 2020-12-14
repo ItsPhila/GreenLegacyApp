@@ -213,7 +213,7 @@ class _PopUpState extends State<PopUp> {
                       IconButton(
                         icon: Icon(Icons.add_a_photo_sharp),
                         color: Colors.grey,
-                        // onPressed: () {},
+                        onPressed: () {},
                       ),
                     Text(
                       "Picture",
@@ -310,7 +310,7 @@ class _PopUpState extends State<PopUp> {
                         borderRadius: BorderRadius.circular(20.0),
                       ),
                       child: Text("Add"),
-                      //onPressed: _savePlant,
+                      onPressed: _savePlant,
 
                       padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
                       splashColor: Colors.blueGrey,
