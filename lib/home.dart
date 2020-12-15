@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:testapp/providers/all_plants.dart';
 import 'package:testapp/services/firestore.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import 'popup.dart';
 import 'widgets/navigate_drawer.dart';
@@ -18,23 +18,15 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final String title = "Home";
   var name = '';
-  var userId = '';
-  var circleTime = '';
 
   List plantList = [];
 
   @override
   void initState() {
     super.initState();
-    fetchPlantList();
-
     User user = FirebaseAuth.instance.currentUser;
     name = user.displayName ?? '';
-    userId = user.uid ?? '';
-  }
-
-  _ago(Timestamp t) {
-    return timeago.format(t.toDate(), locale: 'en_short');
+    fetchPlantList();
   }
 
   fetchPlantList() async {
@@ -49,82 +41,104 @@ class _HomeState extends State<Home> {
     }
   }
 
-  circle() async {
-    await Future.delayed(Duration(seconds: 2));
-    setState(() {
-      circleTime = '2';
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
-      child: Scaffold(
-          appBar: AppBar(
-            title: Text(title),
-          ),
-          // body: Text('Hey'),
-          body: StreamBuilder(
-            stream: FirebaseFirestore.instance
-                .collection('Plants')
-                .orderBy('dateTime')
-                .snapshots(),
-            builder:
-                (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-              if (!snapshot.data.docs.isEmpty)
-                return Center(
-                  child: Text('Welcome ' + name + '!'),
-                );
-              else
-                return ListView(
-                  children: snapshot.data.docs.map((document) {
-                    if (document['userId'] == userId)
-                      return Card(
-                        child: ListTile(
-                          title: Text(document['title']),
-                          subtitle: Text(
-                              'Planted ' + _ago(document['dateTime']) + ' ago'),
-                          // leading: CircleAvatar(
-                          //   backgroundImage: NetworkImage(document['imageUrl']),
-                          // ),
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(100),
-                            child: CachedNetworkImage(
-                              imageUrl: document['imageUrl'],
-                              progressIndicatorBuilder:
-                                  (context, url, downloadProgress) =>
-                                      CircularProgressIndicator(
-                                          value: downloadProgress.progress),
-                              errorWidget: (context, url, error) =>
-                                  Icon(Icons.error),
-                            ),
-                          ),
-                          trailing: Text(''),
-                        ),
-                      );
-                    else {
-                      //return Center(child: Text('No Plants!'));
-                      return null;
-                    }
-                  }).toList(),
-                );
-            },
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return PopUp();
-                },
+    return Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+        ),
+        // body: Text('Hey'),
+        body: StreamBuilder(
+          stream: FirebaseFirestore.instance.collection('Plants').snapshots(),
+          builder:
+              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (snapshot.hasData == false || snapshot.data == null)
+              return Center(
+                child: Text('Welcome ' + name),
               );
-            },
-            tooltip: 'Add Plant',
-            child: Icon(Icons.add),
-          ),
-          drawer: NavigateDrawer(uid: widget.uid)),
-    );
+            else
+              return ListView(
+                children: snapshot.data.docs.map((document) {
+                  return Card(
+                    child: ListTile(
+                      title: Text(document['title']),
+                      subtitle: Text('ID: ' + document['plantId']),
+                      leading: CircleAvatar(
+                        backgroundImage: NetworkImage(document['imageUrl']),
+                      ),
+                      trailing: Text(''),
+                    ),
+                  );
+                }).toList(),
+              );
+          },
+        ),
+
+        // body: Container(
+        //   child: ListView.builder(
+        //       itemCount: plantList.length,
+        //       itemBuilder: (ctx, i) {
+        //         return Card(
+        //           child: ListTile(
+        //             title: Text(plantList[i]["title"]),
+        //             subtitle: Text(plantList[i]["userId"]),
+        //             leading: CircleAvatar(
+        //               backgroundImage: NetworkImage(plantList[i]["imageUrl"]),
+        //             ),
+        //             trailing: Text(''),
+        //           ),
+        //         );
+        //       }),
+        // )
+
+        // body: Consumer<AllPlants>(
+        //   child: Center(
+        //     child: Text('Welcome ' + name),
+        //   ),
+        //   builder: (ctx, allPlants, ch) => allPlants.item.length <= 0
+        //       ? ch
+        //       : ListView.builder(
+        //           itemCount: allPlants.item.length,
+        //           itemBuilder: (ctx, i) => Column(children: <Widget>[
+        //             SizedBox(
+        //               height: 10,
+        //             ),
+        //             if (allPlants.item[i].imageUrl != null)
+        //               ListTile(
+        //                 leading: CircleAvatar(
+        //                   backgroundImage:
+        //                       NetworkImage(allPlants.item[i].imageUrl),
+        //                   // radius: 100,
+        //                 ),
+        //                 title: Text(allPlants.item[i].title),
+        //                 onTap: () {},
+        //               )
+        //             else
+        //               ListTile(
+        //                 leading: CircleAvatar(
+        //                   child: Text(allPlants.item[i].title[0].toUpperCase()),
+        //                   // radius: 100,
+        //                 ),
+        //                 title: Text(allPlants.item[i].title),
+        //                 onTap: () {},
+        //               )
+        //           ]),
+        //         ),
+        // ),
+
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return PopUp();
+              },
+            );
+          },
+          tooltip: 'Add Plant',
+          child: Icon(Icons.add),
+        ),
+        drawer: NavigateDrawer(uid: widget.uid));
   }
 }
 
